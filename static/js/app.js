@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Cache DOM Elements
     const refreshBtn = document.getElementById('refreshBtn');
     const refreshIcon = document.getElementById('refreshIcon');
+    const exportCsvBtn = document.getElementById('exportCsvBtn');
     const searchInput = document.getElementById('searchInput');
     const clearSearchBtn = document.getElementById('clearSearchBtn');
     const typeFilters = document.getElementById('typeFilters');
@@ -60,6 +61,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // Refresh button
         refreshBtn.addEventListener('click', () => {
             fetchReleaseNotes(true);
+        });
+
+        // Export CSV button
+        exportCsvBtn.addEventListener('click', () => {
+            exportFilteredNotesToCSV();
         });
 
         // Search Input
@@ -247,9 +253,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     ${note.content}
                 </div>
                 <div class="card-action-bar">
-                    <button class="select-action-btn">
+                    <button class="select-action-btn tweet-btn-trigger">
                         <span class="material-icons-round">share</span>
                         <span>Tweet this update</span>
+                    </button>
+                    <button class="select-action-btn copy-btn-trigger">
+                        <span class="material-icons-round">content_copy</span>
+                        <span>Copy Text</span>
                     </button>
                 </div>
             `;
@@ -259,7 +269,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Prevent trigger if clicking an anchor link inside card
                 if (e.target.tagName === 'A') return;
                 
+                // Prevent trigger if clicking action buttons themselves
+                if (e.target.closest('.select-action-btn')) return;
+                
                 selectCard(note);
+            });
+
+            // Action triggers
+            card.querySelector('.tweet-btn-trigger').addEventListener('click', (e) => {
+                e.stopPropagation();
+                selectCard(note);
+            });
+
+            card.querySelector('.copy-btn-trigger').addEventListener('click', (e) => {
+                e.stopPropagation();
+                copyCardText(note);
             });
 
             notesList.appendChild(card);
@@ -386,5 +410,72 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             toast.classList.add('hidden');
         }, 3000);
+    }
+
+    // Copy specific card plain text details
+    function copyCardText(note) {
+        const textToCopy = `BigQuery ${note.type} (${note.date}): ${note.text_preview}${note.link ? ' \nSource: ' + note.link : ''}`;
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            showToast("Copied card details to clipboard!");
+        }).catch(err => {
+            console.error("Could not copy card text: ", err);
+            showToast("Failed to copy card details.", true);
+        });
+    }
+
+    // Export current filtered release notes to a download CSV file
+    function exportFilteredNotesToCSV() {
+        if (filteredReleaseNotes.length === 0) {
+            showToast("No release notes available to export.", true);
+            return;
+        }
+
+        const headers = ["Date", "Type", "Link", "Content Preview"];
+        
+        const formatCell = (val) => {
+            if (val === null || val === undefined) return '""';
+            let str = String(val);
+            str = str.replace(/"/g, '""');
+            if (str.includes(',') || str.includes('\n') || str.includes('\r') || str.includes('"')) {
+                return `"${str}"`;
+            }
+            return str;
+        };
+
+        const csvRows = [];
+        csvRows.push(headers.join(','));
+
+        filteredReleaseNotes.forEach(note => {
+            const row = [
+                formatCell(note.date),
+                formatCell(note.type),
+                formatCell(note.link),
+                formatCell(note.text_preview)
+            ];
+            csvRows.push(row.join(','));
+        });
+
+        const csvContent = csvRows.join('\n');
+        
+        try {
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const today = new Date().toISOString().slice(0, 10);
+            const filename = `bigquery_release_notes_${today}.csv`;
+            
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", filename);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showToast(`Exported ${filteredReleaseNotes.length} updates to CSV!`);
+        } catch (e) {
+            console.error("CSV Export failed:", e);
+            showToast("Export to CSV failed.", true);
+        }
     }
 });

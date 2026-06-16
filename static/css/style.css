@@ -295,8 +295,7 @@ body {
     box-shadow: 0 2px 8px rgba(26, 115, 232, 0.25);
 }
 
-.refresh-btn {
-    margin-left: auto;
+.refresh-btn, .export-btn {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -312,12 +311,16 @@ body {
     transition: all var(--transition-speed) var(--transition-curve);
 }
 
-.refresh-btn:hover {
+.refresh-btn {
+    margin-left: auto;
+}
+
+.refresh-btn:hover, .export-btn:hover {
     background-color: var(--color-bg-app);
     border-color: var(--color-text-muted);
 }
 
-.refresh-btn:active {
+.refresh-btn:active, .export-btn:active {
     transform: scale(0.97);
 }
 
@@ -953,7 +956,7 @@ body {
         max-width: none;
     }
     
-    .refresh-btn {
+    .refresh-btn, .export-btn {
         margin-left: 0;
         justify-content: center;
     }
