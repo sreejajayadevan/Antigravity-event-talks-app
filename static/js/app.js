@@ -43,6 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const charWarning = document.getElementById('charWarning');
     const copyTweetBtn = document.getElementById('copyTweetBtn');
     const tweetSubmitBtn = document.getElementById('tweetSubmitBtn');
+    const themeToggleCheckbox = document.getElementById('themeToggleCheckbox');
 
     // Toast element
     const toast = document.getElementById('toast');
@@ -52,6 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
     init();
 
     function init() {
+        initTheme();
         fetchReleaseNotes(false);
         setupEventListeners();
     }
@@ -61,6 +63,19 @@ document.addEventListener('DOMContentLoaded', () => {
         // Refresh button
         refreshBtn.addEventListener('click', () => {
             fetchReleaseNotes(true);
+        });
+
+        // Theme Toggle Switch
+        themeToggleCheckbox.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+                showToast("Switched to Dark Mode!");
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+                localStorage.setItem('theme', 'light');
+                showToast("Switched to Light Mode!");
+            }
         });
 
         // Export CSV button
@@ -476,6 +491,21 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) {
             console.error("CSV Export failed:", e);
             showToast("Export to CSV failed.", true);
+        }
+    }
+
+    // Initialize Theme selection from local storage or system preferences
+    function initTheme() {
+        const savedTheme = localStorage.getItem('theme');
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        
+        const activeTheme = savedTheme || (systemPrefersDark ? 'dark' : 'light');
+        
+        document.documentElement.setAttribute('data-theme', activeTheme);
+        if (activeTheme === 'dark') {
+            themeToggleCheckbox.checked = true;
+        } else {
+            themeToggleCheckbox.checked = false;
         }
     }
 });
